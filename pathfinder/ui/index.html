@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PentaMind PathFinder</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="brand">
+                <span class="logo">⬡</span>
+                <h1>PentaMind <span class="highlight">PathFinder</span></h1>
+                <span class="version">v1.0</span>
+            </div>
+        </header>
+
+        <main class="main">
+            <!-- 扫描配置面板 -->
+            <section class="config-panel" id="config-panel">
+                <h2 class="section-title">🎯 扫描配置</h2>
+                <div class="form-group">
+                    <label for="target">目标地址</label>
+                    <input type="url" id="target" placeholder="https://example.com" />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="concurrency">并发数</label>
+                        <input type="number" id="concurrency" value="20" min="1" max="50" />
+                    </div>
+                    <div class="form-group half">
+                        <label for="timeout">超时 (ms)</label>
+                        <input type="number" id="timeout" value="8000" min="1000" max="30000" step="1000" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>字典选择</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox"><input type="checkbox" id="dict-common" checked /> 通用目录</label>
+                        <label class="checkbox"><input type="checkbox" id="dict-sensitive" checked /> 敏感文件</label>
+                        <label class="checkbox"><input type="checkbox" id="dict-backup" checked /> 备份文件</label>
+                        <label class="checkbox"><input type="checkbox" id="dict-api" checked /> API 端点</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="extensions">追加扩展名（逗号分隔）</label>
+                    <input type="text" id="extensions" placeholder=".php, .asp, .jsp, .bak" />
+                </div>
+
+                <div class="form-group">
+                    <label for="custom-paths">自定义路径（每行一个）</label>
+                    <textarea id="custom-paths" rows="3"
+                        placeholder="custom/path1&#10;secret-admin&#10;debug/info"></textarea>
+                </div>
+
+                <div class="btn-row">
+                    <button id="btn-scan" class="btn btn-primary">🚀 开始扫描</button>
+                </div>
+            </section>
+
+            <!-- 扫描进度 -->
+            <section class="progress-panel" id="progress-panel" style="display:none">
+                <div class="progress-header">
+                    <h2 class="section-title">⏳ 扫描进度</h2>
+                    <button id="btn-abort" class="btn btn-danger btn-sm">停止</button>
+                </div>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+                </div>
+                <div class="progress-stats">
+                    <span id="stat-progress">0 / 0</span>
+                    <span id="stat-found">发现: 0</span>
+                    <span id="stat-elapsed">耗时: 0s</span>
+                    <span id="stat-speed">速度: 0/s</span>
+                </div>
+                <div class="live-feed" id="live-feed"></div>
+            </section>
+
+            <!-- 结果面板 -->
+            <section class="results-panel" id="results-panel" style="display:none">
+                <div class="results-header">
+                    <h2 class="section-title">📋 扫描结果</h2>
+                    <div class="results-actions">
+                        <input type="text" id="result-search" class="search-sm" placeholder="搜索路径..." />
+                        <button id="btn-export-json" class="btn btn-secondary btn-sm">导出 JSON</button>
+                        <button id="btn-new-scan" class="btn btn-primary btn-sm">新扫描</button>
+                    </div>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="stat-cards" id="stat-cards"></div>
+
+                <!-- 结果表格 -->
+                <div class="table-wrap">
+                    <table class="result-table" id="result-table">
+                        <thead>
+                            <tr>
+                                <th>状态码</th>
+                                <th>路径</th>
+                                <th>类型</th>
+                                <th>大小</th>
+                                <th>发现</th>
+                            </tr>
+                        </thead>
+                        <tbody id="result-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
