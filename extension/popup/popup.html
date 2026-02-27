@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PentaMind Scanner</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
+
 <body>
   <div class="app">
     <!-- 顶部标题栏 -->
@@ -13,11 +15,14 @@
       <div class="logo">
         <span class="logo-icon">⬡</span>
         <span class="logo-text">PentaMind</span>
-        <span class="version-tag">v1.0</span>
+        <span class="version-tag">v1.1</span>
       </div>
       <div class="header-actions">
         <button id="btn-rescan" class="btn-icon" title="重新扫描">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3.39"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M1 4v6h6" />
+            <path d="M3.51 15a9 9 0 1 0 .49-3.39" />
+          </svg>
         </button>
       </div>
     </header>
@@ -26,6 +31,16 @@
     <div id="url-bar" class="url-bar">
       <span class="url-label">🌐</span>
       <span id="current-url" class="url-text">—</span>
+    </div>
+
+    <!-- Tab 切换栏 -->
+    <div class="tab-bar" id="tab-bar" style="display:none">
+      <button class="tab-btn active" data-tab="elements">
+        🎯 功能点 <span id="tab-el-count" class="tab-count">0</span>
+      </button>
+      <button class="tab-btn" data-tab="apis">
+        🌐 API <span id="tab-api-count" class="tab-count">0</span>
+      </button>
     </div>
 
     <!-- 风险概览统计卡片 -->
@@ -68,6 +83,9 @@
     <!-- 功能点列表 -->
     <div id="element-list" class="element-list"></div>
 
+    <!-- API 列表 -->
+    <div id="api-list" class="element-list" style="display:none"></div>
+
     <!-- 空状态 / 加载状态 -->
     <div id="state-empty" class="state-placeholder">
       <div class="placeholder-icon">🔍</div>
@@ -84,4 +102,5 @@
 
   <script src="popup.js"></script>
 </body>
+
 </html>
