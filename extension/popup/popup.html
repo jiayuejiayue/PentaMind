@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PentaMind Scanner</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- 顶部标题栏 -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">PentaMind</span>
+        <span class="version-tag">v1.0</span>
+      </div>
+      <div class="header-actions">
+        <button id="btn-rescan" class="btn-icon" title="重新扫描">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3.39"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 当前扫描状态 -->
+    <div id="url-bar" class="url-bar">
+      <span class="url-label">🌐</span>
+      <span id="current-url" class="url-text">—</span>
+    </div>
+
+    <!-- 风险概览统计卡片 -->
+    <div class="risk-summary" id="risk-summary" style="display:none">
+      <div class="risk-card critical" data-filter="CRITICAL">
+        <div class="risk-count" id="count-critical">0</div>
+        <div class="risk-label">危急</div>
+      </div>
+      <div class="risk-card high" data-filter="HIGH">
+        <div class="risk-count" id="count-high">0</div>
+        <div class="risk-label">高危</div>
+      </div>
+      <div class="risk-card medium" data-filter="MEDIUM">
+        <div class="risk-count" id="count-medium">0</div>
+        <div class="risk-label">中危</div>
+      </div>
+      <div class="risk-card low" data-filter="LOW">
+        <div class="risk-count" id="count-low">0</div>
+        <div class="risk-label">低危</div>
+      </div>
+      <div class="risk-card info" data-filter="INFO">
+        <div class="risk-count" id="count-info">0</div>
+        <div class="risk-label">信息</div>
+      </div>
+    </div>
+
+    <!-- 搜索和过滤 -->
+    <div class="filter-bar" id="filter-bar" style="display:none">
+      <input type="text" id="search-input" class="search-input" placeholder="搜索功能点、标签、选择器..." />
+      <select id="risk-filter" class="risk-select">
+        <option value="ALL">全部风险</option>
+        <option value="CRITICAL">危急</option>
+        <option value="HIGH">高危</option>
+        <option value="MEDIUM">中危</option>
+        <option value="LOW">低危</option>
+        <option value="INFO">信息</option>
+      </select>
+    </div>
+
+    <!-- 功能点列表 -->
+    <div id="element-list" class="element-list"></div>
+
+    <!-- 空状态 / 加载状态 -->
+    <div id="state-empty" class="state-placeholder">
+      <div class="placeholder-icon">🔍</div>
+      <p>正在扫描页面功能点...</p>
+      <button id="btn-trigger" class="btn-primary">手动触发扫描</button>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <footer class="footer" id="footer" style="display:none">
+      <span id="total-count" class="total-info">共 0 个功能点</span>
+      <button id="btn-export" class="btn-secondary">导出 JSON</button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
