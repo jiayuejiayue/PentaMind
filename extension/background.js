@@ -14,6 +14,65 @@
 // 结构：{ tabId: { url, timestamp, elements[], apis[], summary } }
 const tabData = {};
 
+// ========== 平台回连配置 ==========
+// 平台后端地址，修改此处即可切换目标平台
+const PLATFORM_API = 'http://localhost:8080';
+const HEARTBEAT_INTERVAL = 30000; // 30秒心跳
+
+/**
+ * 向平台发送数据（静默失败，不影响独立运行）
+ */
+async function reportToPlatform(endpoint, data) {
+    try {
+        await fetch(`${PLATFORM_API}${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+    } catch (e) {
+        // 平台未运行时静默忽略，不影响插件独立工作
+    }
+}
+
+/** 定时心跳 - 让平台知道插件在线 */
+function startHeartbeat() {
+    const send = () => reportToPlatform('/api/plugin/heartbeat', {
+        plugin: 'Extension',
+        version: '1.1',
+        type: 'EXTENSION',
+    });
+    send(); // 立即发一次
+    setInterval(send, HEARTBEAT_INTERVAL);
+}
+startHeartbeat();
+
+/**
+ * 上报扫描结果到平台
+ */
+function reportScanResult(url, elements, apis) {
+    reportToPlatform('/api/plugin/report', {
+        plugin: 'Extension',
+        type: 'SCAN_RESULT',
+        url,
+        elementCount: elements?.length || 0,
+        apiCount: apis?.length || 0,
+        elements: (elements || []).slice(0, 50).map(el => ({
+            tag: el.tag,
+            selector: el.selector,
+            riskFeatures: el.riskFeatures,
+            name: el.name,
+        })),
+        apis: (apis || []).slice(0, 50).map(api => ({
+            method: api.method,
+            url: api.url,
+            statusCode: api.statusCode,
+            riskTags: api.riskTags,
+        })),
+        timestamp: Date.now(),
+    });
+}
+
+
 /** 获取或初始化某 tab 的数据容器 */
 function getTab(tabId, url) {
     if (!tabData[tabId]) {
@@ -145,6 +204,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const total = tab.elements.length + tab.apis.length;
             chrome.action.setBadgeText({ text: total > 0 ? String(total) : '', tabId });
             chrome.action.setBadgeBackgroundColor({ color: '#e74c3c', tabId });
+
+            // 上报平台
+            reportScanResult(tab.url, tab.elements, tab.apis);
             break;
         }
 
