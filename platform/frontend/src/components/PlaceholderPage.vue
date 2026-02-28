@@ -25,8 +25,7 @@ defineProps({
 
 <style scoped>
 .placeholder-page {
-  max-width: 800px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .page-header {

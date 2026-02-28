@@ -104,7 +104,7 @@ const vulnDist = ref([
 </script>
 
 <style scoped>
-.dashboard { max-width: 1200px; }
+.dashboard { width: 100%; }
 
 .stat-card {
   background: var(--pm-bg-content);

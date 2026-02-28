@@ -1,5 +1,5 @@
 <template>
-  <div :class="['sidebar-container', { 'is-collapsed': !appStore.sidebar.opened }]">
+  <div :class="['sidebar-container', { 'is-collapsed': !appStore.sidebar.opened }]" :style="containerStyle">
     <!-- Logo区域 -->
     <div class="sidebar-logo" @click="$router.push('/')">
       <span class="logo-icon">⬡</span>
@@ -56,9 +56,18 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/store/modules/app'
 
+const props = defineProps({
+  width: { type: Number, default: 210 },
+})
+
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
+
+const containerStyle = computed(() => {
+  if (!appStore.sidebar.opened) return { width: '64px' }
+  return { width: props.width + 'px' }
+})
 
 const activeMenu = computed(() => route.path)
 
@@ -82,10 +91,8 @@ function resolvePath(parent, child) {
 
 <style scoped>
 .sidebar-container {
-  width: var(--pm-sidebar-width);
   height: 100vh;
   background: var(--pm-bg-sidebar);
-  transition: width 0.28s ease;
   overflow: hidden;
   flex-shrink: 0;
   display: flex;
@@ -94,7 +101,7 @@ function resolvePath(parent, child) {
 }
 
 .sidebar-container.is-collapsed {
-  width: var(--pm-sidebar-collapsed-width);
+  transition: width 0.28s ease;
 }
 
 /* Logo */
