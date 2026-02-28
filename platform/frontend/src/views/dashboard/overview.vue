@@ -21,22 +21,22 @@
         <div class="card">
           <div class="card-header">
             <h3>近期扫描活动</h3>
-            <el-button text type="primary" size="small">查看全部</el-button>
+            <el-button text type="primary" size="small" @click="loadRecentScans">刷新</el-button>
           </div>
-          <el-table :data="recentScans" style="width: 100%;" size="small" empty-text="暂无扫描记录">
-            <el-table-column prop="target" label="目标" min-width="160" />
-            <el-table-column prop="type" label="类型" width="100">
+          <el-table :data="recentScans" style="width: 100%;" size="small" empty-text="暂无扫描记录" v-loading="scansLoading">
+            <el-table-column prop="target" label="目标" min-width="160" show-overflow-tooltip />
+            <el-table-column prop="type" label="类型" width="120">
               <template #default="{ row }">
-                <el-tag size="small" :type="row.tagType">{{ row.type }}</el-tag>
+                <el-tag size="small" :type="scanTypeTag(row.type)">{{ row.type }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="status" label="状态" width="80">
+            <el-table-column prop="status" label="状态" width="90">
               <template #default="{ row }">
-                <el-tag size="small" :type="row.status === '完成' ? 'success' : 'warning'">{{ row.status }}</el-tag>
+                <el-tag size="small" :type="statusTag(row.status)">{{ row.status }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="vulns" label="漏洞" width="60" />
-            <el-table-column prop="time" label="时间" width="140" />
+            <el-table-column prop="vulns" label="发现" width="60" />
+            <el-table-column prop="time" label="时间" width="160" />
           </el-table>
         </div>
       </el-col>
@@ -56,20 +56,23 @@
         </div>
 
         <div class="card" style="margin-top:16px;">
-          <div class="card-header"><h3>插件状态</h3></div>
-          <div class="plugin-list">
-            <div class="plugin-item">
-              <el-icon :size="20" color="#58a6ff"><Monitor /></el-icon>
-              <div class="plugin-info">
-                <span class="plugin-name">Extension v1.1</span>
-                <span class="plugin-status online">已连接</span>
-              </div>
+          <div class="card-header">
+            <h3>插件状态</h3>
+            <el-button text type="primary" size="small" @click="loadPlugins">刷新</el-button>
+          </div>
+          <div class="plugin-list" v-loading="pluginsLoading">
+            <div v-if="plugins.length === 0" style="text-align:center;color:var(--pm-text-muted);padding:12px;font-size:13px;">
+              暂无插件连接
             </div>
-            <div class="plugin-item">
-              <el-icon :size="20" color="#2ed573"><Search /></el-icon>
+            <div class="plugin-item" v-for="p in plugins" :key="p.id">
+              <el-icon :size="20" :color="p.status === 'ONLINE' ? '#2ed573' : '#ff4757'">
+                <component :is="pluginIcon(p.type)" />
+              </el-icon>
               <div class="plugin-info">
-                <span class="plugin-name">PathFinder v1.0</span>
-                <span class="plugin-status online">运行中</span>
+                <span class="plugin-name">{{ p.name }} {{ p.version }}</span>
+                <span :class="['plugin-status', p.status === 'ONLINE' ? 'online' : 'offline']">
+                  {{ p.status === 'ONLINE' ? '在线' : '离线' }}
+                </span>
               </div>
             </div>
           </div>
@@ -80,27 +83,99 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-const stats = ref([
-  { title: '测试目标', value: '12', icon: 'Aim', color: '#1890ff' },
-  { title: '已发现漏洞', value: '47', icon: 'Warning', color: '#ff4757' },
-  { title: '扫描任务', value: '8', icon: 'List', color: '#2ed573' },
-  { title: '测试报告', value: '5', icon: 'DataAnalysis', color: '#ffa502' },
+const overviewData = ref({})
+const recentScans = ref([])
+const plugins = ref([])
+const loading = ref(false)
+const scansLoading = ref(false)
+const pluginsLoading = ref(false)
+let refreshTimer = null
+
+// 统计卡片 - 从 API 数据中计算
+const stats = computed(() => [
+  { title: '测试目标', value: overviewData.value.targetCount ?? '-', icon: 'Aim', color: '#1890ff' },
+  { title: '已发现漏洞', value: overviewData.value.vulnCount ?? '-', icon: 'Warning', color: '#ff4757' },
+  { title: '扫描任务', value: overviewData.value.taskCount ?? '-', icon: 'List', color: '#2ed573' },
+  { title: '测试报告', value: overviewData.value.reportCount ?? '-', icon: 'DataAnalysis', color: '#ffa502' },
 ])
 
-const recentScans = ref([
-  { target: 'https://demo.example.com', type: '功能点扫描', tagType: 'primary', status: '完成', vulns: 12, time: '2026-02-28 08:30' },
-  { target: 'https://api.example.com', type: '路径扫描', tagType: 'success', status: '完成', vulns: 3, time: '2026-02-28 07:15' },
-  { target: 'https://admin.example.com', type: 'API识别', tagType: 'warning', status: '进行中', vulns: 0, time: '2026-02-28 09:00' },
-])
+// 漏洞分布 - 从 API 数据中计算
+const vulnDist = computed(() => {
+  const d = overviewData.value
+  const total = (d.criticalVulns || 0) + (d.highVulns || 0) + (d.mediumVulns || 0) + (d.lowVulns || 0)
+  const pct = (v) => total > 0 ? Math.round((v / total) * 100) : 0
+  return [
+    { label: '严重', count: d.criticalVulns || 0, pct: pct(d.criticalVulns || 0), color: '#ff4757' },
+    { label: '高危', count: d.highVulns || 0, pct: pct(d.highVulns || 0), color: '#ff6b35' },
+    { label: '中危', count: d.mediumVulns || 0, pct: pct(d.mediumVulns || 0), color: '#ffd32a' },
+    { label: '低危', count: d.lowVulns || 0, pct: pct(d.lowVulns || 0), color: '#2ed573' },
+  ]
+})
 
-const vulnDist = ref([
-  { label: '严重', count: 5, pct: 25, color: '#ff4757' },
-  { label: '高危', count: 12, pct: 60, color: '#ff6b35' },
-  { label: '中危', count: 18, pct: 80, color: '#ffd32a' },
-  { label: '低危', count: 12, pct: 50, color: '#2ed573' },
-])
+// API 调用
+async function apiFetch(url) {
+  try {
+    const res = await fetch(url)
+    const json = await res.json()
+    return json.code === 200 ? json.data : null
+  } catch (e) {
+    console.warn('[Dashboard] API 请求失败:', url, e.message)
+    return null
+  }
+}
+
+async function loadOverview() {
+  const data = await apiFetch('/api/dashboard/overview')
+  if (data) overviewData.value = data
+}
+
+async function loadRecentScans() {
+  scansLoading.value = true
+  const data = await apiFetch('/api/dashboard/recent-scans')
+  if (data) recentScans.value = data
+  scansLoading.value = false
+}
+
+async function loadPlugins() {
+  pluginsLoading.value = true
+  const data = await apiFetch('/api/plugin/list')
+  if (data) plugins.value = data
+  pluginsLoading.value = false
+}
+
+async function loadAll() {
+  await Promise.all([loadOverview(), loadRecentScans(), loadPlugins()])
+}
+
+// 扫描类型标签颜色
+function scanTypeTag(type) {
+  const map = { 'FEATURE_SCAN': 'primary', 'PATH_SCAN': 'success', 'API_SCAN': 'warning', 'VULN_SCAN': 'danger', 'PARAM_FUZZ': 'info' }
+  return map[type] || ''
+}
+
+// 状态标签
+function statusTag(status) {
+  const map = { 'COMPLETED': 'success', 'RUNNING': 'warning', 'PENDING': 'info', 'FAILED': 'danger' }
+  return map[status] || ''
+}
+
+// 插件图标
+function pluginIcon(type) {
+  const map = { 'EXTENSION': 'Monitor', 'PATHFINDER': 'Search' }
+  return map[type] || 'Cpu'
+}
+
+onMounted(() => {
+  loadAll()
+  // 每 30 秒自动刷新
+  refreshTimer = setInterval(loadAll, 30000)
+})
+
+onUnmounted(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
+})
 </script>
 
 <style scoped>
@@ -148,4 +223,5 @@ const vulnDist = ref([
 .plugin-name { font-size: 13px; font-weight: 500; }
 .plugin-status { font-size: 11px; }
 .plugin-status.online { color: #2ed573; }
+.plugin-status.offline { color: #ff4757; }
 </style>

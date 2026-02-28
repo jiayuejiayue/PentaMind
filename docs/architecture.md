@@ -43,10 +43,26 @@ graph TB
 当平台运行时，插件通过以下接口实现数据回连：
 
 ```
+POST /api/plugin/heartbeat  ← 心跳保活（首次自动注册插件）
 POST /api/plugin/report     ← 上报扫描结果
 GET  /api/plugin/config/:name ← 拉取最新配置
-POST /api/plugin/heartbeat  ← 心跳保活
+GET  /api/plugin/list       ← 查询所有插件状态
 ```
+
+### 心跳机制
+
+- 插件每隔 N 秒调用 `POST /api/plugin/heartbeat`，携带 `plugin`、`version`、`type` 字段
+- 后端收到心跳后更新 `pm_plugin.last_heartbeat` 时间戳
+- **首次心跳自动注册**：如果 `pm_plugin` 表中不存在该插件名，自动创建记录
+- **60 秒超时离线**：查询插件列表时，最后心跳超过 60 秒的插件自动标记为 OFFLINE
+
+### 仪表盘数据联动
+
+- 前端仪表盘（`overview.vue`）通过 API 获取真实数据，不使用硬编码
+- 统计卡片：`GET /api/dashboard/overview` → 目标数、漏洞分布、任务数
+- 近期扫描：`GET /api/dashboard/recent-scans` → 最新 10 条扫描任务
+- 插件状态：`GET /api/plugin/list` → 在线/离线实时状态
+- **30 秒自动刷新**：页面挂载后定时轮询所有接口
 
 ## 数据库设计
 

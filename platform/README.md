@@ -63,14 +63,31 @@ platform/
 
 ## API 端点
 
+### 仪表盘（数据来自数据库实时查询）
+
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/dashboard/overview` | 概览统计 |
-| GET | `/api/dashboard/health` | 健康检查 |
+| GET | `/api/dashboard/overview` | 概览统计（目标数/漏洞分布/任务数/报告数） |
+| GET | `/api/dashboard/recent-scans` | 近期扫描活动（最新10条） |
+| GET | `/api/dashboard/health` | 系统健康检查 |
+
+### 目标管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
 | GET | `/api/target/list` | 目标分页列表 |
 | POST | `/api/target` | 新增目标 |
 | PUT | `/api/target` | 修改目标 |
 | DELETE | `/api/target/{id}` | 删除目标 |
+
+### 插件数据联动
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/plugin/list` | 插件列表（自动判断在线/离线） |
+| POST | `/api/plugin/heartbeat` | 插件心跳（首次自动注册，60秒超时离线） |
 | POST | `/api/plugin/report` | 插件数据上报 |
 | GET | `/api/plugin/config/{name}` | 获取插件配置 |
-| POST | `/api/plugin/heartbeat` | 插件心跳 |
+
+> 前端仪表盘每 30 秒自动刷新，所有数据均来自后端 API 实时查询。
+
