@@ -3,7 +3,12 @@ package com.pentamind.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pentamind.common.R;
 import com.pentamind.entity.Plugin;
+import com.pentamind.entity.Target;
+import com.pentamind.entity.ScanTask;
 import com.pentamind.mapper.PluginMapper;
+import com.pentamind.mapper.TargetMapper;
+import com.pentamind.mapper.ScanTaskMapper;
+import com.alibaba.fastjson2.JSON;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +28,12 @@ public class PluginController {
 
     @Autowired
     private PluginMapper pluginMapper;
+
+    @Autowired
+    private TargetMapper targetMapper;
+
+    @Autowired
+    private ScanTaskMapper scanTaskMapper;
 
     /** 获取所有插件状态 */
     @GetMapping("/list")
@@ -81,9 +92,56 @@ public class PluginController {
     public R<Void> receiveReport(@RequestBody Map<String, Object> report) {
         String pluginName = (String) report.getOrDefault("plugin", "unknown");
         String dataType = (String) report.getOrDefault("type", "unknown");
+
         System.out.printf("[PluginReport] plugin=%s, type=%s, data_size=%d%n",
                 pluginName, dataType, report.size());
-        // TODO: 根据 pluginName 和 dataType 分发到对应的 Service 处理
+
+        // 解析并入库扫描结果
+        if ("SCAN_RESULT".equals(dataType)) {
+            String url = (String) report.getOrDefault("url", "unknown");
+            int elementCount = (Integer) report.getOrDefault("elementCount", 0);
+            int apiCount = (Integer) report.getOrDefault("apiCount", 0);
+            int totalFinding = elementCount + apiCount;
+
+            // 1. 自动写入/更新 Target
+            Target target = targetMapper.selectOne(
+                    new LambdaQueryWrapper<Target>().eq(Target::getUrl, url));
+
+            if (target == null) {
+                target = new Target();
+                target.setUrl(url);
+                try {
+                    java.net.URL u = new java.net.URL(url);
+                    target.setName(u.getHost());
+                } catch (Exception e) {
+                    target.setName(url);
+                }
+                target.setType("WEB");
+                target.setStatus(2); // COMPLETED
+                target.setRiskLevel("INFO");
+                target.setVulnCount(0);
+                targetMapper.insert(target);
+            }
+
+            // 2. 自动产生一条 ScanTask
+            ScanTask task = new ScanTask();
+            task.setTargetId(target.getId());
+            task.setName(pluginName + " 页面功能点扫描");
+            task.setScanType("FEATURE_SCAN");
+            task.setStatus("COMPLETED");
+            task.setProgress(100);
+            task.setFindingCount(totalFinding);
+            task.setStartTime(LocalDateTime.now());
+            task.setEndTime(LocalDateTime.now());
+
+            // 将详细元素和API数据转为JSON存入结果
+            Map<String, Object> resultData = new HashMap<>();
+            resultData.put("elements", report.get("elements"));
+            resultData.put("apis", report.get("apis"));
+            task.setResult(JSON.toJSONString(resultData));
+
+            scanTaskMapper.insert(task);
+        }
         return R.ok();
     }
 
