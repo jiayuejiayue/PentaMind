@@ -6,6 +6,7 @@ import com.pentamind.entity.ScanTask;
 import com.pentamind.entity.Target;
 import com.pentamind.mapper.ScanTaskMapper;
 import com.pentamind.mapper.TargetMapper;
+import com.pentamind.service.ToolManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +26,9 @@ public class DashboardController {
 
         @Autowired
         private ScanTaskMapper scanTaskMapper;
+
+        @Autowired
+        private ToolManager toolManager;
 
         /** 概览统计 - 从数据库查询真实数据 */
         @GetMapping("/overview")
@@ -88,6 +92,22 @@ public class DashboardController {
                         item.put("vulns", task.getFindingCount() != null ? task.getFindingCount() : 0);
                         item.put("time", task.getCreateTime());
                         result.add(item);
+                }
+                return R.ok(result);
+        }
+
+        /** 获取系统内所有的安全工具列表 */
+        @GetMapping("/tools")
+        public R<List<Map<String, Object>>> getTools() {
+                List<com.pentamind.model.tool.ToolConfig> configs = toolManager.getAvailableToolsForLlm();
+                List<Map<String, Object>> result = new ArrayList<>();
+                for (com.pentamind.model.tool.ToolConfig c : configs) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("name", c.getName());
+                        map.put("version", c.getVersion() != null ? c.getVersion() : "1.0");
+                        map.put("description", c.getDescription());
+                        map.put("command", c.getCommand());
+                        result.add(map);
                 }
                 return R.ok(result);
         }

@@ -23,7 +23,19 @@ public class R<T> {
         return r;
     }
 
+    public static <T> R<T> success() {
+        return ok(null);
+    }
+
+    public static <T> R<T> success(T data) {
+        return ok(data);
+    }
+
     public static <T> R<T> fail(String msg) {
+        return fail(500, msg);
+    }
+
+    public static <T> R<T> error(String msg) {
         return fail(500, msg);
     }
 

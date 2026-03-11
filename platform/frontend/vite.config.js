@@ -23,10 +23,12 @@ export default defineConfig({
     },
     server: {
         port: 5173,
-        open: true,
+        strictPort: true,      // 端口被占时立即报错，不自动换端口
+        host: '0.0.0.0',       // 监听所有网卡
+        open: 'http://localhost:5173',
         proxy: {
             '/api': {
-                target: 'http://localhost:8080',
+                target: 'http://127.0.0.1:8080',
                 changeOrigin: true,
             },
         },

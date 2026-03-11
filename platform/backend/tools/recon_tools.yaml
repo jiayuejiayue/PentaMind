@@ -1,0 +1,190 @@
+# PentaMind 信息收集 & 漏洞扫描工具合并配置
+# 所有工具统一维护在此文件，供 ToolManager 热加载并提供给 LLM Function Calling 使用
+
+# ==================== 信息收集类 ====================
+
+- name: "nmap_port_scan"
+  description: "基础的 Nmap 端口和服务指纹扫描"
+  author: "PentaMind"
+  version: "1.0"
+  command: "nmap"
+  args:
+    - "-sS"
+    - "-sV"
+    - "-Pn"
+    - "-T4"
+  parameters:
+    target:
+      type: "string"
+      description: "要扫描的目标地址 (IP 或域名)"
+      required: true
+      position: "append"
+    ports:
+      type: "string"
+      description: "指定端口范围，如 '80,443' 或 '1-1000'"
+      required: false
+      prefix: "-p "
+  output:
+    format: "text"
+    guidance: "请关注有 OPEN 状态的端口及衍生的服务版本号，忽略 FILTERED 端口。"
+
+- name: "subfinder_domain"
+  description: "子域名被动收集，通过多数据源枚举目标的子域名"
+  author: "PentaMind"
+  version: "1.0"
+  command: "subfinder"
+  args:
+    - "-silent"
+  parameters:
+    target:
+      type: "string"
+      description: "要枚举子域名的主域名，如 example.com"
+      required: true
+      prefix: "-d "
+    output:
+      type: "string"
+      description: "结果输出文件路径（可选）"
+      required: false
+      prefix: "-o "
+  output:
+    format: "text"
+    guidance: "逐行输出子域名，重点关注带 admin、api、dev、internal 等敏感字眼的子域名。"
+
+- name: "whatweb_fingerprint"
+  description: "Web 指纹识别，探测目标使用的技术栈、框架和服务版本"
+  author: "PentaMind"
+  version: "1.0"
+  command: "whatweb"
+  args:
+    - "--color=never"
+    - "-a"
+    - "3"
+  parameters:
+    target:
+      type: "string"
+      description: "目标 URL，如 http://example.com"
+      required: true
+      position: "append"
+  output:
+    format: "text"
+    guidance: "重点关注 CMS 类型、框架版本（含历史漏洞版本）、WAF 信息。"
+
+- name: "httpx_alive_detect"
+  description: "HTTP 存活探测，批量验证目标 URL 或 IP 的 web 服务可达性并提取标题/状态码"
+  author: "PentaMind"
+  version: "1.0"
+  command: "httpx"
+  args:
+    - "-silent"
+    - "-status-code"
+    - "-title"
+    - "-tech-detect"
+  parameters:
+    target:
+      type: "string"
+      description: "目标 URL 或域名，支持从文件读取（使用 -l 前缀）"
+      required: true
+      position: "append"
+    threads:
+      type: "string"
+      description: "并发线程数，默认 50"
+      required: false
+      prefix: "-threads "
+  output:
+    format: "text"
+    guidance: "关注 200/301/302 状态码，以及页面标题中的登录、管理、后台等关键词。403 也应记录以备后续绕过测试。"
+
+# ==================== 路径爆破类 ====================
+
+- name: "gobuster_dir"
+  description: "目录与路径爆破，枚举 Web 应用中的隐藏路径、备份文件和管理后台"
+  author: "PentaMind"
+  version: "1.0"
+  command: "gobuster"
+  args:
+    - "dir"
+    - "-q"
+    - "--no-error"
+  parameters:
+    target:
+      type: "string"
+      description: "目标 URL，如 http://example.com"
+      required: true
+      prefix: "-u "
+    wordlist:
+      type: "string"
+      description: "字典文件路径，如 /usr/share/wordlists/dirb/common.txt"
+      required: false
+      prefix: "-w "
+    extensions:
+      type: "string"
+      description: "要探测的文件扩展名，如 php,html,txt,bak"
+      required: false
+      prefix: "-x "
+  output:
+    format: "text"
+    guidance: "关注包含 backup、admin、upload、config、.git、.env 等敏感路径，200/301/302 可直接渗透，403 可尝试绕过。"
+
+- name: "dirsearch_dir"
+  description: "目录扫描（dirsearch），使用内置多扩展名字典，与 gobuster 互补提高覆盖率"
+  author: "PentaMind"
+  version: "1.0"
+  command: "dirsearch"
+  args:
+    - "-q"
+    - "--no-color"
+    - "--max-time=540"
+  parameters:
+    target:
+      type: "string"
+      description: "目标 URL，如 http://example.com"
+      required: true
+      prefix: "-u "
+    extensions:
+      type: "string"
+      description: "要扫描的文件扩展名，如 php,html,txt,bak"
+      required: false
+      prefix: "-e "
+    wordlist:
+      type: "string"
+      description: "自定义字典路径（可选，默认使用 dirsearch 内置字典）"
+      required: false
+      prefix: "-w "
+    threads:
+      type: "string"
+      description: "并发线程数，默认 20"
+      required: false
+      prefix: "-t "
+  output:
+    format: "text"
+    guidance: "关注 200/301/302/403 状态码，尤其是管理界面、备份文件和配置文件路径。"
+
+# ==================== 漏洞扫描类 ====================
+
+- name: "nuclei_vuln_scan"
+  description: "基于 PoC 模板库的漏洞扫描，使用 Nuclei 社区维护的高质量漏洞模板进行批量探测"
+  author: "PentaMind"
+  version: "1.0"
+  command: "nuclei"
+  args:
+    - "-silent"
+    - "-no-color"
+  parameters:
+    target:
+      type: "string"
+      description: "目标 URL 或 IP"
+      required: true
+      prefix: "-u "
+    severity:
+      type: "string"
+      description: "过滤扫描的漏洞严重级别，如 critical,high,medium"
+      required: false
+      prefix: "-severity "
+    tags:
+      type: "string"
+      description: "指定扫描标签，如 cve,exposure,rce"
+      required: false
+      prefix: "-tags "
+  output:
+    format: "text"
+    guidance: "优先关注 critical 和 high 等级，结合 CVE 编号查询 CVSS 分数和公开利用脚本。"

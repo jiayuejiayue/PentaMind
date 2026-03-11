@@ -86,3 +86,56 @@ CREATE TABLE IF NOT EXISTS `pm_plugin` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_name` (`name`)
 ) ENGINE=InnoDB COMMENT='插件管理';
+
+-- ================= 新增侦察资产表 =================
+
+-- 子域名表
+CREATE TABLE IF NOT EXISTS `pm_subdomain` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `target_id` BIGINT NOT NULL COMMENT '所属目标ID',
+  `domain` VARCHAR(255) NOT NULL COMMENT '子域名',
+  `ip_list` VARCHAR(500) DEFAULT NULL COMMENT '解析IP(逗号分隔)',
+  `status_code` INT DEFAULT NULL COMMENT 'HTTP状态码',
+  `title` VARCHAR(255) DEFAULT NULL COMMENT '页面标题',
+  `source` VARCHAR(50) DEFAULT 'Manual' COMMENT '发现来源: Subfinder/Amass/...',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` TINYINT DEFAULT 0,
+  PRIMARY KEY (`id`),
+  INDEX `idx_target` (`target_id`)
+) ENGINE=InnoDB COMMENT='子域名资产';
+
+-- 端口服务表
+CREATE TABLE IF NOT EXISTS `pm_port` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `target_id` BIGINT NOT NULL COMMENT '所属目标ID',
+  `ip` VARCHAR(50) NOT NULL COMMENT '主机IP',
+  `port` INT NOT NULL COMMENT '端口号',
+  `protocol` VARCHAR(20) DEFAULT 'tcp' COMMENT '协议: tcp/udp',
+  `service` VARCHAR(100) DEFAULT NULL COMMENT '服务指纹: http/ssh/mysql',
+  `version` VARCHAR(100) DEFAULT NULL COMMENT '服务版本',
+  `state` VARCHAR(20) DEFAULT 'open' COMMENT '端口状态: open/filtered/...',
+  `source` VARCHAR(50) DEFAULT 'Manual' COMMENT '发现来源: Nmap/Masscan/...',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` TINYINT DEFAULT 0,
+  PRIMARY KEY (`id`),
+  INDEX `idx_target` (`target_id`)
+) ENGINE=InnoDB COMMENT='端口服务资产';
+
+-- 敏感路径与目录表
+CREATE TABLE IF NOT EXISTS `pm_path` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `target_id` BIGINT NOT NULL COMMENT '所属目标ID',
+  `url` VARCHAR(500) NOT NULL COMMENT '完整URL路径',
+  `status_code` INT DEFAULT NULL COMMENT '响应状态码',
+  `content_length` INT DEFAULT NULL COMMENT '返回包长度',
+  `content_type` VARCHAR(100) DEFAULT NULL COMMENT '响应类型',
+  `title` VARCHAR(255) DEFAULT NULL COMMENT '页面标题',
+  `source` VARCHAR(50) DEFAULT 'Manual' COMMENT '发现来源: Dirsearch/Ffuf/...',
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` TINYINT DEFAULT 0,
+  PRIMARY KEY (`id`),
+  INDEX `idx_target` (`target_id`)
+) ENGINE=InnoDB COMMENT='Web路径资产';

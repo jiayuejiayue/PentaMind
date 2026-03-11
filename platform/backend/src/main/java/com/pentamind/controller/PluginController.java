@@ -9,6 +9,7 @@ import com.pentamind.mapper.PluginMapper;
 import com.pentamind.mapper.TargetMapper;
 import com.pentamind.mapper.ScanTaskMapper;
 import com.alibaba.fastjson2.JSON;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,7 @@ import java.util.Map;
  * 接收来自 Extension、PathFinder 等插件上报的数据
  * 管理插件心跳和在线状态
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/plugin")
 public class PluginController {
@@ -103,24 +105,13 @@ public class PluginController {
             int apiCount = (Integer) report.getOrDefault("apiCount", 0);
             int totalFinding = elementCount + apiCount;
 
-            // 1. 自动写入/更新 Target
+            // 1. 自动关联 Target（修复：不再从浏览器漫游流量自动创建 Target，避免列表污染）
             Target target = targetMapper.selectOne(
                     new LambdaQueryWrapper<Target>().eq(Target::getUrl, url));
 
             if (target == null) {
-                target = new Target();
-                target.setUrl(url);
-                try {
-                    java.net.URL u = new java.net.URL(url);
-                    target.setName(u.getHost());
-                } catch (Exception e) {
-                    target.setName(url);
-                }
-                target.setType("WEB");
-                target.setStatus(2); // COMPLETED
-                target.setRiskLevel("INFO");
-                target.setVulnCount(0);
-                targetMapper.insert(target);
+                log.debug("[PluginReport] 接收到未知域名的插件流量 {}, 已丢弃目标创建操作以防污染库表。", url);
+                return R.ok();
             }
 
             // 2. 自动产生一条 ScanTask
@@ -162,5 +153,18 @@ public class PluginController {
             config.put("enabled", false);
         }
         return R.ok(config);
+    }
+
+    /** 判断是否是 172.16.0.0-172.31.255.255 私有网段 */
+    private boolean isPrivate172(String host) {
+        try {
+            String[] parts = host.split("\\.");
+            if (parts.length < 2)
+                return false;
+            int second = Integer.parseInt(parts[1]);
+            return second >= 16 && second <= 31;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

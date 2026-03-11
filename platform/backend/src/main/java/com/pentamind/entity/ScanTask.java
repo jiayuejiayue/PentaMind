@@ -29,7 +29,10 @@ public class ScanTask {
     /** 扫描进度 0-100 */
     private Integer progress;
 
-    /** 扫描结果（JSON） */
+    /** 扫描结果概要（JSON/Text） */
+    private String resultSummary;
+
+    /** 扫描结果全文（JSON） */
     private String result;
 
     /** 发现数量 */

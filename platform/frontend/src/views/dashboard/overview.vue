@@ -56,23 +56,38 @@
         </div>
 
         <div class="card" style="margin-top:16px;">
-          <div class="card-header">
-            <h3>插件状态</h3>
-            <el-button text type="primary" size="small" @click="loadPlugins">刷新</el-button>
-          </div>
-          <div class="plugin-list" v-loading="pluginsLoading">
-            <div v-if="plugins.length === 0" style="text-align:center;color:var(--pm-text-muted);padding:12px;font-size:13px;">
-              暂无插件连接
+          <div class="card-header"><h3>🤖 大模型配置</h3></div>
+          <div class="llm-list">
+            <div class="llm-item active-item">
+              <div class="llm-header">
+                <span class="llm-badge">当前激活</span>
+                <el-tag type="success" size="small" effect="dark">运行中</el-tag>
+              </div>
+              <div class="llm-name">智谱 GLM-5</div>
+              <div class="llm-detail">
+                <span class="llm-key">模型</span><span class="llm-val">glm-5</span>
+              </div>
+              <div class="llm-detail">
+                <span class="llm-key">接口</span><span class="llm-val llm-url">maas-api.ai-yuanjing.com</span>
+              </div>
+              <div class="llm-detail">
+                <span class="llm-key">特性</span><span class="llm-val">支持推理思维链 (CoT)</span>
+              </div>
             </div>
-            <div class="plugin-item" v-for="p in plugins" :key="p.id">
-              <el-icon :size="20" :color="p.status === 'ONLINE' ? '#2ed573' : '#ff4757'">
-                <component :is="pluginIcon(p.type)" />
-              </el-icon>
-              <div class="plugin-info">
-                <span class="plugin-name">{{ p.name }} {{ p.version }}</span>
-                <span :class="['plugin-status', p.status === 'ONLINE' ? 'online' : 'offline']">
-                  {{ p.status === 'ONLINE' ? '在线' : '离线' }}
-                </span>
+            <div class="llm-item">
+              <div class="llm-header">
+                <span class="llm-badge inactive">备用</span>
+                <el-tag type="info" size="small">待激活</el-tag>
+              </div>
+              <div class="llm-name">恒脑 DAS AI</div>
+              <div class="llm-detail">
+                <span class="llm-key">智能体</span><span class="llm-val">86832399-...</span>
+              </div>
+              <div class="llm-detail">
+                <span class="llm-key">接口</span><span class="llm-val llm-url">www.das-ai.com</span>
+              </div>
+              <div class="llm-detail">
+                <span class="llm-key">切换</span><span class="llm-val">修改 active-provider 配置</span>
               </div>
             </div>
           </div>
@@ -87,10 +102,10 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const overviewData = ref({})
 const recentScans = ref([])
-const plugins = ref([])
+const tools = ref([])
 const loading = ref(false)
 const scansLoading = ref(false)
-const pluginsLoading = ref(false)
+const toolsLoading = ref(false)
 let refreshTimer = null
 
 // 统计卡片 - 从 API 数据中计算
@@ -138,15 +153,15 @@ async function loadRecentScans() {
   scansLoading.value = false
 }
 
-async function loadPlugins() {
-  pluginsLoading.value = true
-  const data = await apiFetch('/api/plugin/list')
-  if (data) plugins.value = data
-  pluginsLoading.value = false
+async function loadTools() {
+  toolsLoading.value = true
+  const data = await apiFetch('/api/dashboard/tools')
+  if (data) tools.value = data
+  toolsLoading.value = false
 }
 
 async function loadAll() {
-  await Promise.all([loadOverview(), loadRecentScans(), loadPlugins()])
+  await Promise.all([loadOverview(), loadRecentScans(), loadTools()])
 }
 
 // 扫描类型标签颜色
@@ -159,12 +174,6 @@ function scanTypeTag(type) {
 function statusTag(status) {
   const map = { 'COMPLETED': 'success', 'RUNNING': 'warning', 'PENDING': 'info', 'FAILED': 'danger' }
   return map[status] || ''
-}
-
-// 插件图标
-function pluginIcon(type) {
-  const map = { 'EXTENSION': 'Monitor', 'PATHFINDER': 'Search' }
-  return map[type] || 'Cpu'
 }
 
 onMounted(() => {
@@ -217,11 +226,23 @@ onUnmounted(() => {
 .vuln-label { flex: 1; font-size: 13px; color: var(--pm-text-secondary); }
 .vuln-count { font-weight: 600; font-size: 14px; }
 
-.plugin-list { display: flex; flex-direction: column; gap: 12px; }
-.plugin-item { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 6px; background: var(--pm-bg-page); }
-.plugin-info { display: flex; flex-direction: column; }
-.plugin-name { font-size: 13px; font-weight: 500; }
-.plugin-status { font-size: 11px; }
-.plugin-status.online { color: #2ed573; }
-.plugin-status.offline { color: #ff4757; }
+.tool-list { display: flex; flex-direction: column; gap: 12px; }
+.tool-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 6px; background: var(--pm-bg-page); border-left: 3px solid #1890ff; }
+.tool-info { display: flex; flex-direction: column; gap: 4px; }
+.tool-name { font-size: 14px; font-weight: 600; color: var(--pm-text-primary); display:flex; align-items:center; gap: 6px;}
+.tool-desc { font-size: 12px; color: var(--pm-text-secondary); line-height: 1.4; }
+.version-tag { zoom: 0.8; }
+
+/* 大模型配置卡片 */
+.llm-list { display: flex; flex-direction: column; gap: 10px; }
+.llm-item { padding: 12px; border-radius: 6px; background: var(--pm-bg-page); border-left: 3px solid #666; }
+.active-item { border-left-color: #2ed573; background: rgba(46, 213, 115, 0.05); }
+.llm-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.llm-badge { font-size: 11px; color: #2ed573; font-weight: 600; }
+.llm-badge.inactive { color: #666; }
+.llm-name { font-size: 14px; font-weight: 700; color: var(--pm-text-primary); margin-bottom: 6px; }
+.llm-detail { display: flex; gap: 8px; margin-top: 3px; }
+.llm-key { font-size: 11px; color: var(--pm-text-muted); min-width: 32px; }
+.llm-val { font-size: 12px; color: var(--pm-text-secondary); }
+.llm-url { color: #1890ff; font-family: monospace; font-size: 11px; }
 </style>

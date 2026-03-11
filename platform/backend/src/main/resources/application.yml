@@ -5,6 +5,17 @@ server:
   servlet:
     context-path: /
 
+# PentaMind 平台自定义配置
+pentamind:
+  # 工具 YAML 描述文件目录（绝对路径，避免工作目录不同导致找不到工具）
+  tools-dir: "E:/webSafe/AI_agent/PentaMind/platform/backend/tools/"
+  
+  # 远端 Python MCP 节点调度配置
+  mcp:
+    python-path: "D:/python/anaconda/python.exe"
+    server-script: "E:/webSafe/AI_agent/PentaMind/platform/mcp-server/main.py"
+
+
 spring:
   application:
     name: pentamind-platform
@@ -31,6 +42,28 @@ mybatis-plus:
 
 # 日志配置
 logging:
+  file:
+    name: logs/pentamind.log
   level:
     com.pentamind: debug
     org.springframework: info
+
+# 恒脑 (Das AI) 大模型服务配置
+das-ai:
+  base-url: "https://www.das-ai.com"
+  chat-url: "https://www.das-ai.com/dasChat"
+  app-key: "hengnaoz4lVh6BlSyeTsR0tb7J7"
+  app-secret: "zxzuy2262cxtlrexzvux56tumkja1xck"
+  user-app-key: "hengnaoUK_LnE5KgvHGTsYy44mRBFx"
+  agent-id: "86832399-331c-4b8e-8cc5-e1eaa5d4fbe9"
+  user-app-secret: "zxzuy2262cxtlrexzvux56tumkja1xck"
+
+# 智谱 AI (GLM) 大模型配置
+zhipu-ai:
+  api-key: "sk-7242956f72b94d8699ea45222758ffcf"
+  # OpenAI 兼容接口地址（去掉末尾的 /chat/completions，Service 层会自动拼接）
+  base-url: "https://maas-api.ai-yuanjing.com/openapi/compatible-mode/v1"
+  model: "glm-5"
+  # 当前激活的大模型提供商: zhipu | das-ai
+  active-provider: "zhipu"
+

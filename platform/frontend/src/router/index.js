@@ -39,7 +39,27 @@ const routes = [
                 component: () => import('@/views/dashboard/realtime.vue'),
                 meta: { title: '实时态势', icon: 'Monitor' },
             },
+            {
+                path: 'dashboard/analysis',
+                name: 'DashboardAnalysis',
+                component: () => import('@/views/dashboard/analysis.vue'),
+                meta: { title: '系统分析', icon: 'Share' },
+            },
         ],
+    },
+    {
+        path: '/agent',
+        component: Layout,
+        redirect: '/agent/penetration',
+        meta: { title: 'AI 渗透', icon: 'Cpu' },
+        children: [
+            {
+                path: 'penetration',
+                name: 'AgentPenetration',
+                component: () => import('@/views/agent/penetration.vue'),
+                meta: { title: '自动化渗透', icon: 'MagicStick' },
+            }
+        ]
     },
     {
         path: '/recon',
@@ -57,7 +77,7 @@ const routes = [
                 path: 'assets',
                 name: 'ReconAssets',
                 component: () => import('@/views/recon/assets.vue'),
-                meta: { title: '资产发现', icon: 'Coin' },
+                meta: { title: '目录扫描', icon: 'FolderOpened' },
             },
             {
                 path: 'ports',
